@@ -3,12 +3,12 @@
 
 # Background
 The motorcycle navigation unit from Garmin, the zumo® XT, is a great unit. But it's routing is not always appreciated,
-this holds true especially for trips <b>imported<b> from an external program like Basecamp or MyRoute App. Trips <b>saved</b> on the Xt itself behave better.
+this holds true especially for trips <b>imported</b> from an external program like Basecamp or MyRoute App. Trips <b>saved</b> on the Xt itself behave better.
 The programs in this repository can change a trip from <b>imported</b> to <b>saved</b>, thereby fixing the routing. 
 
 More info can be found:
 
-https://www.zumouserforums.co.uk/viewtopic.php?t=2301
+https://www.zumouserforums.co.uk/viewtopic.php?t=2301 <br>
 https://www.javawa.nl/triprepair.html
 
 # The code
