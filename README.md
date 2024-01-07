@@ -9,7 +9,7 @@ The programs in this repository can change a trip from <b>imported</b> to <b>sav
 More info can be found:<br>
 https://www.zumouserforums.co.uk/viewtopic.php?t=2301 <br>
 
-There is also an online version that can be found here (That source code is not part of this repository>:<br>
+There is also an online version that can be found here (That source code is not part of this repository):<br>
 https://www.javawa.nl/triprepair.html
 
 # The code
@@ -17,7 +17,7 @@ https://www.javawa.nl/triprepair.html
 <h4>Java</h4>
 
    The Java code can be compiled with Eclipse. https://www.eclipse.org
-   The generated .jar can be used on Windows, Linux and Mac. This version can also be found on Zumo User Forums: https://www.zumouserforums.co.uk/viewtopic.php?t=2301
+   The generated .jar can be used on Windows, Linux and Mac. This version can also be found on Zumo User Forums
 
 <h4>Delphi</h4>
 
