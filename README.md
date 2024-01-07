@@ -26,7 +26,10 @@ https://www.javawa.nl/triprepair.html
 
   - It has a Graphical User Interface (GUI). No need for typing commands.
   - It shows more info.
-  - It can replace the files directly on the XT.
+  - It can replace the files directly on the XT.<br>
+
+[Getting started](Docs/getting%20started/Getting%20started.pdf)<br>
+
 
 <h4>CBuilder</h4>
 
