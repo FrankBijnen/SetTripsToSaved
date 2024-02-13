@@ -8,7 +8,8 @@ uses
   ListViewSort in 'ListViewSort.pas',
   mtp_helper in 'mtp_helper.pas',
   PortableDeviceApiLib_TLB in 'PortableDeviceApiLib_TLB.pas',
-  UnitMtpDevice in 'UnitMtpDevice.pas';
+  UnitMtpDevice in 'UnitMtpDevice.pas',
+  BCHexEditor in 'BCHexEditor.pas';
 
 {$R *.res}
 
