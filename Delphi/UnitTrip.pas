@@ -190,7 +190,7 @@ var HeaderRec: TheaderRec;
 
   function ProcessList(ListInfo: TStrings; ProcessOption: TProcessOption): boolean;
   var
-      Indx: DWORD;
+      Indx: integer;
       LocIndx: integer;
       KeyLen: DWORD;
       KeyName: PAnsiChar;
