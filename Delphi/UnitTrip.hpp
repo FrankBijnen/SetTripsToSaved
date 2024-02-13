@@ -31,6 +31,13 @@ namespace Unittrip
 {
 //-- forward type declarations -----------------------------------------------
 struct THeaderRec;
+struct TLocationRec;
+struct TScnPosn;
+struct TVersion;
+struct TAllRoutes;
+struct TUdbHandle;
+struct TSubClass;
+struct TUdbDir;
 //-- type declarations -------------------------------------------------------
 enum DECLSPEC_DENUM TProcessOption : unsigned char { CheckOnly, SetToSaved, SetToImported };
 
@@ -47,8 +54,98 @@ public:
 #pragma pack(pop)
 
 
+#pragma pack(push,1)
+struct DECLSPEC_DRECORD TLocationRec
+{
+public:
+	System::StaticArray<char, 4> LocId;
+	unsigned LocSize;
+	System::Byte Unused;
+	unsigned LocItems;
+	System::Byte Terminator;
+};
+#pragma pack(pop)
+
+
+#pragma pack(push,1)
+struct DECLSPEC_DRECORD TScnPosn
+{
+public:
+	unsigned ScnSize;
+	unsigned Val1;
+	int Lat;
+	int Lon;
+};
+#pragma pack(pop)
+
+
+#pragma pack(push,1)
+struct DECLSPEC_DRECORD TVersion
+{
+public:
+	unsigned Major;
+	unsigned Minor;
+};
+#pragma pack(pop)
+
+
+#pragma pack(push,1)
+struct DECLSPEC_DRECORD TAllRoutes
+{
+public:
+	unsigned DbHandles;
+	unsigned val2;
+	unsigned DbHandlesSize;
+	unsigned val4;
+	System::Byte Unused;
+	System::Byte Terminator;
+};
+#pragma pack(pop)
+
+
+#pragma pack(push,1)
+struct DECLSPEC_DRECORD TUdbHandle
+{
+public:
+	unsigned KeyLen;
+	System::StaticArray<char, 12> KeyName;
+	unsigned ValueLen;
+	System::Byte DataType;
+	System::StaticArray<System::Byte, 158> Unused1;
+	System::Word DbHandles;
+	System::StaticArray<System::Byte, 1288> Unused2;
+};
+#pragma pack(pop)
+
+
+#pragma pack(push,1)
+struct DECLSPEC_DRECORD TSubClass
+{
+public:
+	unsigned MapSegment;
+	unsigned RoadId;
+	System::Byte PointType;
+	System::Byte Direction;
+	System::StaticArray<System::Byte, 6> Reserved2;
+};
+#pragma pack(pop)
+
+
+#pragma pack(push,1)
+struct DECLSPEC_DRECORD TUdbDir
+{
+public:
+	TSubClass SubClass;
+	unsigned Lat;
+	unsigned Lon;
+	System::StaticArray<unsigned, 6> Unused;
+	System::StaticArray<unsigned, 121> Name;
+};
+#pragma pack(pop)
+
+
 //-- var, const, procedure ---------------------------------------------------
-extern DELPHI_PACKAGE bool __fastcall ProcessTripFile(const System::UnicodeString TripFile, System::Classes::TStrings* TripInfo, TProcessOption ProcessOption);
+extern DELPHI_PACKAGE bool __fastcall ProcessTripFile(const System::UnicodeString TripFile, System::Classes::TStrings* TripInfo, System::Classes::TStrings* LocInfo, System::Classes::TStrings* RouteInfo, TProcessOption ProcessOption);
 }	/* namespace Unittrip */
 #if !defined(DELPHIHEADER_NO_IMPLICIT_NAMESPACE_USE) && !defined(NO_USING_NAMESPACE_UNITTRIP)
 using namespace Unittrip;

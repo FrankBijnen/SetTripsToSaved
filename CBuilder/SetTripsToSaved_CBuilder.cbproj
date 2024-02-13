@@ -132,6 +132,9 @@
             <BuildOrder>1</BuildOrder>
             <PCH>true</PCH>
         </PCHCompile>
+        <DelphiCompile Include="..\Delphi\BCHexEditor.pas">
+            <BuildOrder>9</BuildOrder>
+        </DelphiCompile>
         <DelphiCompile Include="..\Delphi\ListViewSort.pas">
             <BuildOrder>2</BuildOrder>
         </DelphiCompile>
@@ -252,7 +255,12 @@
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName=".\Win32\Debug\SetTripsToSaved_CBuilder.exe" Configuration="Debug" Class="ProjectOutput"/>
-                <DeployFile LocalName=".\Win32\Debug\SetTripsToSaved_CBuilder.tds" Configuration="Debug" Class="DebugSymbols"/>
+                <DeployFile LocalName=".\Win32\Release\SetTripsToSaved_CBuilder.exe" Configuration="Release" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>SetTripsToSaved_CBuilder.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>

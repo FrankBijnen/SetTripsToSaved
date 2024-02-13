@@ -3,8 +3,8 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
   Top = 0
   AlphaBlend = True
   Caption = 'Set trips to saved'
-  ClientHeight = 638
-  ClientWidth = 1151
+  ClientHeight = 653
+  ClientWidth = 1297
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -13,11 +13,12 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
   Font.Style = []
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnShow = FormShow
   TextHeight = 13
   object Splitter1: TSplitter
     Left = 0
     Top = 142
-    Width = 1151
+    Width = 1297
     Height = 3
     Cursor = crVSplit
     Align = alTop
@@ -25,25 +26,34 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
     ExplicitTop = 157
     ExplicitWidth = 818
   end
+  object Splitter2: TSplitter
+    Left = 631
+    Top = 172
+    Width = 5
+    Height = 481
+    ExplicitLeft = 1
+    ExplicitTop = 1
+    ExplicitHeight = 464
+  end
   object LBDevices: TListBox
     Left = 0
     Top = 60
-    Width = 1151
+    Width = 1297
     Height = 82
     Align = alTop
     ItemHeight = 13
     TabOrder = 0
     OnDblClick = LBDevicesDblClick
-    ExplicitWidth = 1147
+    ExplicitWidth = 1293
   end
   object PnlTop: TPanel
     Left = 0
     Top = 0
-    Width = 1151
+    Width = 1297
     Height = 60
     Align = alTop
     TabOrder = 1
-    ExplicitWidth = 1147
+    ExplicitWidth = 1293
     object BtnRefresh: TButton
       Left = 10
       Top = 25
@@ -56,13 +66,13 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
     object EdTempPath: TEdit
       Left = 1
       Top = 1
-      Width = 1149
+      Width = 1295
       Height = 21
       Align = alTop
       ReadOnly = True
       TabOrder = 1
       Text = 'EdTempPath'
-      ExplicitWidth = 1145
+      ExplicitWidth = 1291
     end
     object BtnSetImported: TButton
       Tag = 2
@@ -93,75 +103,159 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
       TabOrder = 4
       OnClick = BtnCheckClick
     end
-  end
-  object LstFiles: TListView
-    Left = 0
-    Top = 172
-    Width = 845
-    Height = 466
-    Align = alClient
-    Checkboxes = True
-    Columns = <
-      item
-        Caption = 'Name'
-        Width = 250
-      end
-      item
-        Caption = 'Date'
-        Width = 150
-      end
-      item
-        Caption = 'Time'
-        Width = 150
-      end
-      item
-        Caption = 'Ext'
-      end
-      item
-        Alignment = taRightJustify
-        Caption = 'Size'
-        Tag = 1
-        Width = 150
-      end>
-    HideSelection = False
-    LargeImages = ImageList
-    MultiSelect = True
-    ReadOnly = True
-    RowSelect = True
-    SmallImages = ImageList
-    TabOrder = 2
-    ViewStyle = vsReport
-    OnColumnClick = LstFilesColumnClick
-    OnCompare = LstFilesCompare
-    OnDblClick = LstFilesDblClick
-    OnDeletion = LstFilesDeletion
-    OnSelectItem = LstFilesSelectItem
-    OnItemChecked = LstFilesItemChecked
-    ExplicitWidth = 841
-    ExplicitHeight = 465
+    object BtnOpenTripFile: TButton
+      Left = 723
+      Top = 25
+      Width = 75
+      Height = 25
+      Caption = 'Open trip File'
+      TabOrder = 5
+      OnClick = BtnOpenTripFileClick
+    end
   end
   object PnlParent: TPanel
     AlignWithMargins = True
     Left = 8
     Top = 148
-    Width = 1135
+    Width = 1281
     Height = 21
     Margins.Left = 8
     Margins.Right = 8
     Align = alTop
     Alignment = taLeftJustify
-    TabOrder = 3
-    ExplicitWidth = 1131
+    TabOrder = 2
+    ExplicitWidth = 1277
   end
-  object VleTripInfo: TValueListEditor
-    Left = 845
+  object PageControl1: TPageControl
+    Left = 0
     Top = 172
-    Width = 306
-    Height = 466
-    Align = alRight
+    Width = 631
+    Height = 481
+    ActivePage = TabSheetFiles
+    Align = alLeft
+    TabOrder = 3
+    OnChange = PageControl1Change
+    ExplicitHeight = 480
+    object TabSheetFiles: TTabSheet
+      Caption = 'FileList'
+      ImageIndex = 3
+      object LstFiles: TListView
+        Left = 0
+        Top = 0
+        Width = 623
+        Height = 453
+        Align = alClient
+        Checkboxes = True
+        Columns = <
+          item
+            Caption = 'Name'
+            Width = 250
+          end
+          item
+            Caption = 'Date'
+            Width = 150
+          end
+          item
+            Caption = 'Time'
+            Width = 150
+          end
+          item
+            Caption = 'Ext'
+          end
+          item
+            Alignment = taRightJustify
+            Caption = 'Size'
+            Tag = 1
+            Width = 150
+          end>
+        HideSelection = False
+        LargeImages = ImageList
+        MultiSelect = True
+        ReadOnly = True
+        RowSelect = True
+        SmallImages = ImageList
+        TabOrder = 0
+        ViewStyle = vsReport
+        OnColumnClick = LstFilesColumnClick
+        OnCompare = LstFilesCompare
+        OnDblClick = LstFilesDblClick
+        OnDeletion = LstFilesDeletion
+        OnSelectItem = LstFilesSelectItem
+        OnItemChecked = LstFilesItemChecked
+      end
+    end
+    object TabSheetTrip: TTabSheet
+      Caption = 'Trip info'
+      object VleTripInfo: TValueListEditor
+        Left = 0
+        Top = 0
+        Width = 623
+        Height = 453
+        Align = alClient
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goAlwaysShowEditor, goThumbTracking]
+        TabOrder = 0
+        OnSelectCell = SyncHexEdit
+        ColWidths = (
+          150
+          467)
+      end
+    end
+    object TabSheetLocations: TTabSheet
+      Caption = 'mLocations'
+      ImageIndex = 1
+      object VlemLocations: TValueListEditor
+        Left = 0
+        Top = 0
+        Width = 623
+        Height = 453
+        Align = alClient
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goAlwaysShowEditor, goThumbTracking]
+        TabOrder = 0
+        OnSelectCell = SyncHexEdit
+        ExplicitHeight = 452
+        ColWidths = (
+          150
+          467)
+      end
+    end
+    object TabSheetAllRoutes: TTabSheet
+      Caption = 'mAllRoutes'
+      ImageIndex = 2
+      object VlemAllRoutes: TValueListEditor
+        Left = 0
+        Top = 0
+        Width = 623
+        Height = 453
+        Align = alClient
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goAlwaysShowEditor, goThumbTracking]
+        TabOrder = 0
+        OnSelectCell = SyncHexEdit
+        ColWidths = (
+          150
+          467)
+      end
+    end
+  end
+  object HexPanel: TPanel
+    Left = 636
+    Top = 172
+    Width = 661
+    Height = 481
+    Align = alClient
     TabOrder = 4
-    ExplicitLeft = 841
-    ExplicitHeight = 465
+    ExplicitWidth = 657
+    ExplicitHeight = 480
+    object PnlTripName: TPanel
+      Left = 1
+      Top = 1
+      Width = 659
+      Height = 41
+      Align = alTop
+      TabOrder = 0
+      ExplicitLeft = 100
+      ExplicitTop = 50
+      ExplicitWidth = 185
+    end
   end
   object ImageList: TImageList
     Left = 72
@@ -305,5 +399,9 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
       E007800F00000000E00F801F00000000E01FC0FF00000000E03FC0FF00000000
       FFFFFFFF00000000FFFFFFFF0000000000000000000000000000000000000000
       000000000000}
+  end
+  object OpenDialog1: TOpenDialog
+    Left = 905
+    Top = 33
   end
 end

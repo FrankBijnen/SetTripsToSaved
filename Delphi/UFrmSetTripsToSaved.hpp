@@ -30,6 +30,7 @@
 #include <Vcl.ImgList.hpp>
 #include <Vcl.Grids.hpp>
 #include <Vcl.ValEdit.hpp>
+#include <BCHexEditor.hpp>
 #include <UnitMtpDevice.hpp>
 #include <mtp_helper.hpp>
 #include <ListViewSort.hpp>
@@ -52,16 +53,28 @@ class PASCALIMPLEMENTATION TFrmSetTripsToSaved : public Vcl::Forms::TForm
 __published:
 	Vcl::Stdctrls::TListBox* LBDevices;
 	Vcl::Extctrls::TPanel* PnlTop;
-	Vcl::Comctrls::TListView* LstFiles;
 	Vcl::Extctrls::TSplitter* Splitter1;
 	Vcl::Stdctrls::TButton* BtnRefresh;
 	Vcl::Extctrls::TPanel* PnlParent;
 	Vcl::Controls::TImageList* ImageList;
 	Vcl::Stdctrls::TEdit* EdTempPath;
-	Vcl::Valedit::TValueListEditor* VleTripInfo;
 	Vcl::Stdctrls::TButton* BtnSetImported;
 	Vcl::Stdctrls::TButton* BtnSetSaved;
 	Vcl::Stdctrls::TButton* BtnCheck;
+	Vcl::Stdctrls::TButton* BtnOpenTripFile;
+	Vcl::Dialogs::TOpenDialog* OpenDialog1;
+	Vcl::Comctrls::TPageControl* PageControl1;
+	Vcl::Comctrls::TTabSheet* TabSheetTrip;
+	Vcl::Comctrls::TTabSheet* TabSheetLocations;
+	Vcl::Comctrls::TTabSheet* TabSheetAllRoutes;
+	Vcl::Valedit::TValueListEditor* VleTripInfo;
+	Vcl::Valedit::TValueListEditor* VlemLocations;
+	Vcl::Valedit::TValueListEditor* VlemAllRoutes;
+	Vcl::Comctrls::TTabSheet* TabSheetFiles;
+	Vcl::Comctrls::TListView* LstFiles;
+	Vcl::Extctrls::TPanel* HexPanel;
+	Vcl::Extctrls::TSplitter* Splitter2;
+	Vcl::Extctrls::TPanel* PnlTripName;
 	void __fastcall FormCreate(System::TObject* Sender);
 	void __fastcall FormDestroy(System::TObject* Sender);
 	void __fastcall BtnRefreshClick(System::TObject* Sender);
@@ -74,6 +87,10 @@ __published:
 	void __fastcall LstFilesSelectItem(System::TObject* Sender, Vcl::Comctrls::TListItem* Item, bool Selected);
 	void __fastcall BtnCheckClick(System::TObject* Sender);
 	void __fastcall LstFilesItemChecked(System::TObject* Sender, Vcl::Comctrls::TListItem* Item);
+	void __fastcall BtnOpenTripFileClick(System::TObject* Sender);
+	void __fastcall FormShow(System::TObject* Sender);
+	void __fastcall SyncHexEdit(System::TObject* Sender, int ACol, int ARow, bool &CanSelect);
+	void __fastcall PageControl1Change(System::TObject* Sender);
 	
 private:
 	System::UnicodeString PrefDevice;
@@ -84,6 +101,9 @@ private:
 	System::WideString FCurrentPath;
 	System::Classes::TList* DeviceList;
 	Listviewsort::TSortSpecification FSortSpecification;
+	Bchexeditor::TBCHexEditor* HexEdit;
+	void __fastcall SyncHexEditFromPage();
+	void __fastcall LoadHex(const System::UnicodeString FileName);
 	void __fastcall FreeCustomData(const void * ACustomData);
 	void __fastcall FreeDevices();
 	void __fastcall SelectDevice(const int Indx);

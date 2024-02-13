@@ -7,6 +7,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.ComCtrls,
   System.ImageList, Vcl.ImgList, Vcl.Grids, Vcl.ValEdit,
+  BCHexEditor,
   UnitMtpDevice, mtp_helper, ListViewSort, UnitTrip, Vcl.Menus;
 
 const UpDirString  = '..';
@@ -18,16 +19,28 @@ type
   TFrmSetTripsToSaved = class(TForm)
     LBDevices: TListBox;
     PnlTop: TPanel;
-    LstFiles: TListView;
     Splitter1: TSplitter;
     BtnRefresh: TButton;
     PnlParent: TPanel;
     ImageList: TImageList;
     EdTempPath: TEdit;
-    VleTripInfo: TValueListEditor;
     BtnSetImported: TButton;
     BtnSetSaved: TButton;
     BtnCheck: TButton;
+    BtnOpenTripFile: TButton;
+    OpenDialog1: TOpenDialog;
+    PageControl1: TPageControl;
+    TabSheetTrip: TTabSheet;
+    TabSheetLocations: TTabSheet;
+    TabSheetAllRoutes: TTabSheet;
+    VleTripInfo: TValueListEditor;
+    VlemLocations: TValueListEditor;
+    VlemAllRoutes: TValueListEditor;
+    TabSheetFiles: TTabSheet;
+    LstFiles: TListView;
+    HexPanel: TPanel;
+    Splitter2: TSplitter;
+    PnlTripName: TPanel;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure BtnRefreshClick(Sender: TObject);
@@ -40,6 +53,10 @@ type
     procedure LstFilesSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
     procedure BtnCheckClick(Sender: TObject);
     procedure LstFilesItemChecked(Sender: TObject; Item: TListItem);
+    procedure BtnOpenTripFileClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure SyncHexEdit(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure PageControl1Change(Sender: TObject);
   private
     { Private declarations }
     PrefDevice: string;
@@ -52,7 +69,9 @@ type
     FCurrentPath: WideString;
     DeviceList: Tlist;
     FSortSpecification: TSortSpecification;
-
+    HexEdit: TBCHexEditor;
+    procedure SyncHexEditFromPage;
+    procedure LoadHex(const FileName: string);
     procedure FreeCustomData(const ACustomData: pointer);
     procedure FreeDevices;
     procedure SelectDevice(const Indx: integer);
@@ -117,8 +136,23 @@ begin
   end;
 end;
 
+procedure TFrmSetTripsToSaved.BtnOpenTripFileClick(Sender: TObject);
+begin
+  if OpenDialog1.Execute then
+  begin
+    HexEdit.LoadFromFile(OpenDialog1.FileName);
+    UnitTrip.ProcessTripFile(OpenDialog1.FileName, VleTripinfo.Strings, VlemLocations.Strings, VlemAllRoutes.Strings, TProcessOption.CheckOnly);
+    LoadHex(OpenDialog1.FileName);
+  end;
+end;
+
 procedure TFrmSetTripsToSaved.FormCreate(Sender: TObject);
 begin
+  HexEdit := TBCHexEditor.Create(Self);
+  HexEdit.Parent := HexPanel;
+  HexEdit.Align := alClient;
+  HexEdit.ReadOnlyView := true;
+
   InitSortSpec(LstFiles.Columns[0], true, FSortSpecification);
   ReadSettings;
   EdTempPath.Text := CreateTempPath('TRIP');
@@ -129,6 +163,11 @@ procedure TFrmSetTripsToSaved.FormDestroy(Sender: TObject);
 begin
   FreeDevices;
   RemovePath(EdTempPath.Text);
+end;
+
+procedure TFrmSetTripsToSaved.FormShow(Sender: TObject);
+begin
+  PageControl1.ActivePageIndex := 0;
 end;
 
 procedure TFrmSetTripsToSaved.FreeCustomData(const ACustomData: pointer);
@@ -216,6 +255,42 @@ begin
   FSavedParent := GetIdForPath(CurrentDevice.Device, APath, FriendlyPath);
 end;
 
+procedure TFrmSetTripsToSaved.SyncHexEdit(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+var SelStart, SelEnd: integer;
+begin
+  // Default no selection
+  HexEdit.SelStart := 0;
+  HexEdit.SelEnd := -1;
+
+  // Valid Row?
+  if (ARow >= TValueListEditor(Sender).Strings.Count) then
+    exit;
+
+  SelStart := Integer(TValueListEditor(Sender).Strings.Objects[ARow -1]);
+  if (SelStart < 0) then
+    exit;
+
+  SelEnd := Integer(TValueListEditor(Sender).Strings.Objects[ARow]) -1;
+
+  // Set new selection
+  HexEdit.SelStart := SelStart;
+  HexEdit.SelEnd := SelEnd;
+
+  // Position selection on top
+  if (HexEdit.BytesPerRow > 0) then
+    HexEdit.TopRow := SelStart div HexEdit.BytesPerRow;
+end;
+
+procedure TFrmSetTripsToSaved.SyncHexEditFromPage;
+var CanSelect: boolean;
+begin
+  case PageControl1.ActivePageIndex of
+    1: VleTripInfo.OnSelectCell(VleTripInfo, 1, VleTripInfo.Row, CanSelect);
+    2: VlemLocations.OnSelectCell(VlemLocations, 1, VlemLocations.Row, CanSelect);
+    3: VlemAllRoutes.OnSelectCell(VlemAllRoutes, 1, VlemAllRoutes.Row, CanSelect);
+  end;
+end;
+
 procedure TFrmSetTripsToSaved.ListFiles(const UseParent: boolean);
 var ABASE_Data: TBASE_Data;
     SParent: Widestring;
@@ -299,11 +374,25 @@ begin
   else
     ProcessOption := TProcessOption.SetToImported;
   ProcessFile(Item.Index, ProcessOption);
+  LoadHex(IncludeTrailingPathDelimiter(EdTempPath.Text) + Item.Caption);
 end;
 
 procedure TFrmSetTripsToSaved.LstFilesSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
 begin
   ProcessFile(Item.Index, TProcessOption.CheckOnly);
+  LoadHex(IncludeTrailingPathDelimiter(EdTempPath.Text) + Item.Caption);
+end;
+
+procedure TFrmSetTripsToSaved.LoadHex(const FileName: string);
+begin
+  HexEdit.LoadFromFile(FileName);
+  PnlTripName.Caption := ExtractFileName(FileName) + ' / ' + VleTripInfo.Values['mTripName'];
+  SyncHexEditFromPage;
+end;
+
+procedure TFrmSetTripsToSaved.PageControl1Change(Sender: TObject);
+begin
+  SyncHexEditFromPage;
 end;
 
 function TFrmSetTripsToSaved.ProcessFile(const Indx: integer; ProcessOption: TProcessOption): boolean;
@@ -332,7 +421,9 @@ begin
       result := GetFileFromDevice(PortableDev, ABASE_Data_File.ObjectId, EdTempPath.Text, NFile);
       if not result then
         raise Exception.Create(Format('Copy %s from %s failed', [NFile, CurrentDevice.Device]));
-      result := ProcessTripFile(LocalFile, VleTripinfo.Strings, ProcessOption);
+
+      result := ProcessTripFile(LocalFile, VleTripinfo.Strings, VlemLocations.Strings, VlemAllRoutes.Strings, ProcessOption);
+
       ImportedValue := VleTripinfo.Strings.Values['mImported'];
 
       if (ImportedValue <> '') then
