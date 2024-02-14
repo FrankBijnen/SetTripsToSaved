@@ -374,12 +374,16 @@ begin
   else
     ProcessOption := TProcessOption.SetToImported;
   ProcessFile(Item.Index, ProcessOption);
+  if TBASE_Data(Item.Data).IsFolder then
+    exit;
   LoadHex(IncludeTrailingPathDelimiter(EdTempPath.Text) + Item.Caption);
 end;
 
 procedure TFrmSetTripsToSaved.LstFilesSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
 begin
   ProcessFile(Item.Index, TProcessOption.CheckOnly);
+  if TBASE_Data(Item.Data).IsFolder then
+    exit;
   LoadHex(IncludeTrailingPathDelimiter(EdTempPath.Text) + Item.Caption);
 end;
 
