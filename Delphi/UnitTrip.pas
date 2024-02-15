@@ -38,7 +38,7 @@ type
   end;
 
   TAllRoutes = packed record
-    DbHandles: DWORD;
+    DbHandles: integer;
     val2: DWORD;
     DbHandlesSize: DWORD;
     val4: DWORD;
@@ -66,8 +66,8 @@ type
 
   TUdbDir = packed record
     SubClass: TSubClass;
-    Lat: DWORD;
-    Lon: DWORD;
+    Lat: integer;
+    Lon: integer;
     Unused: array[0..5] of DWORD;
     Name: array[0..120] of UCS4Char;
   end;
@@ -329,7 +329,6 @@ begin
         begin
           // Get Location count
           GetLocationCount(LocCnt);
-          //LocInfo.AddPair('Location count', Format('%d', [LocCnt]));
 
           // Get info of each location
           for LocIndx := 1 to LocCnt do
@@ -351,7 +350,7 @@ begin
             exit(false);
           AllRoutes.DbHandles := Swap32(AllRoutes.DbHandles);
           AllRoutes.DbHandlesSize := Swap32(AllRoutes.DbHandlesSize);
-          RouteInfo.AddPair('mUdbHandles', Format('%d', [AllRoutes.DbHandles]), TObject(StartFilePos));
+          RouteInfo.AddPair('mUdbHandles', Format('Count: %d Size: %d', [AllRoutes.DbHandles, AllRoutes.DbHandlesSize]), TObject(StartFilePos));
           LocFilePos := FilePos(F);
           for Indx := 1 to AllRoutes.DbHandles do
             ProcessRoute(Indx = AllRoutes.DbHandles);
