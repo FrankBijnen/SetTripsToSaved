@@ -60,7 +60,7 @@ struct DECLSPEC_DRECORD TLocationRec
 public:
 	System::StaticArray<char, 4> LocId;
 	unsigned LocSize;
-	System::Byte Unused;
+	System::Byte Unknown1;
 	unsigned LocItems;
 	System::Byte Terminator;
 };
@@ -72,7 +72,7 @@ struct DECLSPEC_DRECORD TScnPosn
 {
 public:
 	unsigned ScnSize;
-	unsigned Val1;
+	unsigned Unknown1;
 	int Lat;
 	int Lon;
 };
@@ -93,11 +93,11 @@ public:
 struct DECLSPEC_DRECORD TAllRoutes
 {
 public:
-	unsigned DbHandles;
-	unsigned val2;
+	int DbHandles;
+	unsigned Unknown1;
 	unsigned DbHandlesSize;
-	unsigned val4;
-	System::Byte Unused;
+	unsigned Unknown2;
+	System::Byte Unknown3;
 	System::Byte Terminator;
 };
 #pragma pack(pop)
@@ -111,9 +111,9 @@ public:
 	System::StaticArray<char, 12> KeyName;
 	unsigned ValueLen;
 	System::Byte DataType;
-	System::StaticArray<System::Byte, 158> Unused1;
+	System::StaticArray<System::Byte, 158> Unknown1;
 	System::Word DbHandles;
-	System::StaticArray<System::Byte, 1288> Unused2;
+	System::StaticArray<System::Byte, 1288> Unknown2;
 };
 #pragma pack(pop)
 
@@ -126,7 +126,7 @@ public:
 	unsigned RoadId;
 	System::Byte PointType;
 	System::Byte Direction;
-	System::StaticArray<System::Byte, 6> Reserved2;
+	System::StaticArray<System::Byte, 6> Unknown1;
 };
 #pragma pack(pop)
 
@@ -136,9 +136,9 @@ struct DECLSPEC_DRECORD TUdbDir
 {
 public:
 	TSubClass SubClass;
-	unsigned Lat;
-	unsigned Lon;
-	System::StaticArray<unsigned, 6> Unused;
+	int Lat;
+	int Lon;
+	System::StaticArray<unsigned, 6> Unknown1;
 	System::StaticArray<unsigned, 121> Name;
 };
 #pragma pack(pop)

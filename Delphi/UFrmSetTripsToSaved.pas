@@ -269,8 +269,14 @@ begin
   SelStart := Integer(TValueListEditor(Sender).Strings.Objects[ARow -1]);
   if (SelStart < 0) then
     exit;
+  if (SelStart >= HexEdit.DataSize) then
+    SelStart := HexEdit.DataSize -1;
 
   SelEnd := Integer(TValueListEditor(Sender).Strings.Objects[ARow]) -1;
+  if (SelEnd < SelStart) then
+    SelEnd := SelStart;
+  if (SelEnd >= HexEdit.DataSize) then
+    SelEnd := HexEdit.DataSize -1;
 
   // Set new selection
   HexEdit.SelStart := SelStart;
@@ -428,7 +434,7 @@ begin
 
       result := ProcessTripFile(LocalFile, VleTripinfo.Strings, VlemLocations.Strings, VlemAllRoutes.Strings, ProcessOption);
 
-      ImportedValue := VleTripinfo.Strings.Values['mImported'];
+      ImportedValue := VleTripInfo.Strings.Values['mImported'];
 
       if (ImportedValue <> '') then
       begin
@@ -437,7 +443,7 @@ begin
 
         LstFiles.Tag := LstFiles.Tag + 1; // Prevent an action to be executed
         try
-          LstFiles.Items[Indx].Checked := (ImportedValue = 'False');
+          LstFiles.Items[Indx].Checked := (Pos('Value: False', ImportedValue) > 0);
         finally
           LstFiles.Tag := LstFiles.Tag - 1;
         end;

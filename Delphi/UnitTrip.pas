@@ -20,14 +20,14 @@ type
   TLocationRec = packed record
     LocId: array [0..3] of AnsiChar;
     LocSize: DWORD;
-    Unused: byte; // Maybe items including self? Always LocItems +1
+    Unknown1: byte; // Maybe items including self? Always LocItems +1
     LocItems: DWORD;
     Terminator: byte;
   end;
 
   TScnPosn = packed record
     ScnSize: DWORD;
-    Val1: DWORD;
+    Unknown1: DWORD;
     Lat: integer;
     Lon: integer;
   end;
@@ -39,10 +39,10 @@ type
 
   TAllRoutes = packed record
     DbHandles: integer;
-    val2: DWORD;
+    Unknown1: DWORD;
     DbHandlesSize: DWORD;
-    val4: DWORD;
-    Unused: byte; // Maybe items including self? Always LocItems +1
+    Unknown2: DWORD;
+    Unknown3: byte; // Maybe items including self? Always LocItems +1
     Terminator: byte;
   end;
 
@@ -51,9 +51,11 @@ type
     KeyName: array[0..11] of ansichar;
     ValueLen: dword;
     DataType: byte;
-    Unused1: array[0..157] of byte;
+    Unknown1: dword;
+    Unknown2: dword;  // Only value seen: 0538feff
+    Unknown3: array[0..149] of byte;
     DbHandles: WORD;
-    Unused2: array[0..1287] of byte;
+    Unknown4: array[0..1287] of byte;
   end;
 
   TSubClass = packed record
@@ -61,14 +63,14 @@ type
     RoadId: DWORD;
     PointType: byte;
     Direction: byte;
-    Reserved2: array[0..5] of byte;
+    Unknown1: array[0..5] of byte;
   end;
 
   TUdbDir = packed record
     SubClass: TSubClass;
     Lat: integer;
     Lon: integer;
-    Unused: array[0..5] of DWORD;
+    Unknown1: array[0..5] of DWORD; // Unknown1[0] = 69045951
     Name: array[0..120] of UCS4Char;
   end;
 
@@ -145,12 +147,17 @@ var HeaderRec: TheaderRec;
     if (UdbHandle.KeyName <> 'mUdbDataHndl') then
       exit(false);
     UdbHandle.ValueLen := Swap32(UdbHandle.ValueLen);
-    RouteInfo.AddPair(string(UdbHandle.KeyName), 'Begin',
+
+    RouteInfo.AddPair(string(UdbHandle.KeyName), Format('Begin: Size: %d Datatype: %d', [UdbHandle.ValueLen, UdbHandle.DataType]),
                       TObject(StartFilePos));
-    RouteInfo.AddPair(string(UdbHandle.KeyName), Format('Count: %d', [UdbHandle.DbHandles]),
+    RouteInfo.AddPair(string(UdbHandle.KeyName), Format('Unknown1: 0x%.8x, Unknown2: 0x%.8x, Unknown3: %d bytes',
+                      [UdbHandle.Unknown1, UdbHandle.Unknown2, SizeOf(UdbHandle.Unknown3)]),
+                      TObject(StartFilePos + (integer(@UdbHandle.Unknown1) - integer(@UdbHandle.KeyLen)) ));
+    RouteInfo.AddPair(string(UdbHandle.KeyName), Format('Count: %d',
+                      [UdbHandle.DbHandles]),
                       TObject(StartFilePos + (integer(@UdbHandle.DbHandles) - integer(@UdbHandle.KeyLen)) ));
-    RouteInfo.AddPair(string(UdbHandle.KeyName), 'End',
-                      TObject(StartFilePos + (integer(@UdbHandle.Unused2) - integer(@UdbHandle.KeyLen)) ));
+    RouteInfo.AddPair(string(UdbHandle.KeyName), Format('End: Unknown4: %d bytes', [SizeOf(UdbHandle.Unknown4)]),
+                      TObject(StartFilePos + (integer(@UdbHandle.Unknown4) - integer(@UdbHandle.KeyLen))));
     for UdbIndx := 1 to UdbHandle.DbHandles do
     begin
       StartFilePos := FilePos(F);
@@ -173,7 +180,15 @@ var HeaderRec: TheaderRec;
                                UdbDir.SubClass.MapSegment,
                                UdbDir.SubClass.RoadId]
                               ),
-                        Format('Type: 0x%.2x, Dir: 0x%.2x %s', [UdbDir.SubClass.PointType, UdbDir.SubClass.Direction, ValueString]),
+                        Format('Type: 0x%.2x, Dir: 0x%.2x Unknown: 0x%.8x 0x%.8x 0x%.8x 0x%.8x 0x%.8x 0x%.8x Name: %s',
+                               [UdbDir.SubClass.PointType, UdbDir.SubClass.Direction,
+                               UdbDir.Unknown1[0],
+                               UdbDir.Unknown1[1],
+                               UdbDir.Unknown1[2],
+                               UdbDir.Unknown1[3],
+                               UdbDir.Unknown1[4],
+                               UdbDir.Unknown1[3],
+                               ValueString]),
                         TObject(StartFilePos));
     end;
 // last one ends with 09
@@ -288,20 +303,27 @@ begin
           SizeOf(ScnPosn) + Sizeof(Terminator):
             begin
               BlockRead(F, ScnPosn, SizeOf(ScnPosn), BytesRead);
+              ScnPosn.ScnSize := Swap32(ScnPosn.ScnSize);
+              ScnPosn.Unknown1 := Swap32(ScnPosn.Unknown1);
               if (BytesRead = 0) then
                 exit(false);
-              Msg := Format('0x%.8x, Lat: %.7g, Lon: %.7g',
-              [ScnPosn.Val1, // TODO. Looks like unitid, software version etc.
+              Msg := Format('ScnSize: %d, Unknown1: 0x%.2x, Lat: %.7g, Lon: %.7g',
+              [ScnPosn.ScnSize,
+               ScnPosn.Unknown1, // TODO. Looks like unitid, software version etc.
                ScnPosn.Lat / 4294967296 * 360,
                ScnPosn.Lon / 4294967296 * 360]
               );
             end;
+          SizeOf(Version) + Sizeof(Terminator):
+            begin
+              BlockRead(F, Version, SizeOf(Version), BytesRead);
+              if (BytesRead = 0) then
+                exit(false);
+              Msg := Format('0x%.8x, 0x%.8x', [Version.Major, Version.Minor]);
+            end;
           else
           begin
-            BlockRead(F, Version, SizeOf(Version), BytesRead);
-            if (BytesRead = 0) then
-              exit(false);
-            Msg := Format('0x%.8x, 0x%.8x', [Version.Major, Version.Minor]);
+            Msg := Format('Length: %d', [Valuelen]);
           end;
         end;
       end;
@@ -324,7 +346,7 @@ begin
       end;
     128:
       begin // List
-        Msg := Format('List Datatype %d, Length: %d', [datatype, ValueLen]);
+        Msg := 'List';
         if (System.AnsiStrings.StrPas(KeyName) = 'mLocations') then
         begin
           // Get Location count
@@ -344,13 +366,18 @@ begin
         end;
         if (System.AnsiStrings.StrPas(KeyName) = 'mAllRoutes') then
         begin
-          StartFilePos := FilePos(F);
           BlockRead(F, AllRoutes, SizeOf(AllRoutes), BytesRead);
           if (BytesRead = 0) then
             exit(false);
+
           AllRoutes.DbHandles := Swap32(AllRoutes.DbHandles);
           AllRoutes.DbHandlesSize := Swap32(AllRoutes.DbHandlesSize);
-          RouteInfo.AddPair('mUdbHandles', Format('Count: %d Size: %d', [AllRoutes.DbHandles, AllRoutes.DbHandlesSize]), TObject(StartFilePos));
+
+          RouteInfo.AddPair('mUdbHandles',
+                            Format('Count: %d Unknown1: 0x%.8x, Size: %d, Unknown2: 0x%.8x Unknown3: 0x%.2x',
+                            [AllRoutes.DbHandles, AllRoutes.Unknown1, AllRoutes.DbHandlesSize, AllRoutes.Unknown2, AllRoutes.Unknown3]),
+                            TObject(SaveFilePos));
+
           LocFilePos := FilePos(F);
           for Indx := 1 to AllRoutes.DbHandles do
             ProcessRoute(Indx = AllRoutes.DbHandles);
@@ -365,7 +392,7 @@ begin
       end;
     end;
 
-    ListInfo.AddPair(string(KeyName), Msg, Tobject(StartFilePos));
+    ListInfo.AddPair(string(KeyName), Format('Length: %d, Type: %d, Value: %s', [Valuelen, DataType, Msg]), Tobject(StartFilePos));
     System.AnsiStrings.StrDispose(KeyName);
 
     BlockRead(F, Terminator, SizeOf(Terminator), BytesRead);
