@@ -41,8 +41,8 @@ type
     DbHandles: integer;
     Unknown1: DWORD;
     DbHandlesSize: DWORD;
-    Unknown2: DWORD;
-    Unknown3: byte; // Maybe items including self? Always LocItems +1
+    DataType: byte;
+    HandleId: integer;
     Terminator: byte;
   end;
 
@@ -51,7 +51,7 @@ type
     KeyName: array[0..11] of ansichar;
     ValueLen: dword;
     DataType: byte;
-    Unknown1: dword;
+    UdbHandleSize: dword;
     Unknown2: dword;  // Only value seen: 0538feff
     Unknown3: array[0..149] of byte;
     DbHandles: WORD;
@@ -82,12 +82,30 @@ uses System.AnsiStrings, System.DateUtils, System.Character;
 
 const BoolValues: array[False .. True] of string = ('False', 'True');
 
-function Swap32(I: dword): dword;
+type
+  T4Bytes = array[0..3] of byte;
+
+function Swap32(I: T4Bytes): T4Bytes; overload;
 begin
-  PByteArray(@result)[0] := pbytearray(@I)[3];
-  PByteArray(@result)[1] := pbytearray(@I)[2];
-  PByteArray(@result)[2] := pbytearray(@I)[1];
-  PByteArray(@result)[3] := pbytearray(@I)[0];
+  result[0] := I[3];
+  result[1] := I[2];
+  result[2] := I[1];
+  result[3] := I[0];
+end;
+
+function Swap32(I: integer): integer; overload;
+begin
+  result := integer(Swap32(T4BYtes(I)));
+end;
+
+function Swap32(I: DWORD): DWORD; overload;
+begin
+  result := DWORD(Swap32(T4BYtes(I)));
+end;
+
+function Swap32(I: single): single; overload;
+begin
+  result := Single(Swap32(T4BYtes(I)));
 end;
 
 function ProcessTripFile(const TripFile: string; TripInfo, LocInfo, RouteInfo: TStrings; ProcessOption: TProcessOption): boolean;
@@ -147,12 +165,13 @@ var HeaderRec: TheaderRec;
     if (UdbHandle.KeyName <> 'mUdbDataHndl') then
       exit(false);
     UdbHandle.ValueLen := Swap32(UdbHandle.ValueLen);
+    UdbHandle.UdbHandleSize := Swap32(UdbHandle.UdbHandleSize);
 
     RouteInfo.AddPair(string(UdbHandle.KeyName), Format('Begin: Size: %d Datatype: %d', [UdbHandle.ValueLen, UdbHandle.DataType]),
                       TObject(StartFilePos));
-    RouteInfo.AddPair(string(UdbHandle.KeyName), Format('Unknown1: 0x%.8x, Unknown2: 0x%.8x, Unknown3: %d bytes',
-                      [UdbHandle.Unknown1, UdbHandle.Unknown2, SizeOf(UdbHandle.Unknown3)]),
-                      TObject(StartFilePos + (integer(@UdbHandle.Unknown1) - integer(@UdbHandle.KeyLen)) ));
+    RouteInfo.AddPair(string(UdbHandle.KeyName), Format('Size: %d, Unknown2: 0x%.8x, Unknown3: %d bytes',
+                      [UdbHandle.UdbHandleSize, UdbHandle.Unknown2, SizeOf(UdbHandle.Unknown3)]),
+                      TObject(StartFilePos + (integer(@UdbHandle.UdbHandleSize) - integer(@UdbHandle.KeyLen)) ));
     RouteInfo.AddPair(string(UdbHandle.KeyName), Format('Count: %d',
                       [UdbHandle.DbHandles]),
                       TObject(StartFilePos + (integer(@UdbHandle.DbHandles) - integer(@UdbHandle.KeyLen)) ));
@@ -217,7 +236,8 @@ var HeaderRec: TheaderRec;
       NewValueBool: boolean;
       ValueByte: byte;
       ValueDword: DWORD;
-
+      ValueSingle: Single;
+      ValueEpoch: int64;
       ValueString: string;
       PCharLen: smallint;
       PCharDword: DWORD;
@@ -265,13 +285,32 @@ begin
          exit(false);
         Msg := Format('%d', [ValueByte]);
       end;
-    3,4:
+    3:
       begin // DWORD integer;
         BlockRead(F, ValueDword, SizeOf(ValueDword), BytesRead);
         if (BytesRead = 0) then
           exit(false);
         ValueDWord := Swap32(ValueDWord);
-        Msg := Format('%d', [ValueDWord]);
+        if (System.AnsiStrings.StrPas(KeyName) = 'mArrival') then
+        begin
+          if (ValueDword = 0) then
+            Msg := 'N/A'
+          else
+          begin
+            ValueEpoch := ValueDword + DateTimeToUnix(EncodeDateTime(1989,12,31,0,0,0,0)); // Starts from 1989/12/31
+            Msg := Format('%s', [DateTimeToStr(UnixToDateTime(ValueEpoch, false))]);
+          end;
+        end
+        else
+          Msg := Format('%d', [ValueDWord]);
+      end;
+    4:
+      begin // DWORD Single;
+        BlockRead(F, ValueSingle, SizeOf(ValueSingle), BytesRead);
+        if (BytesRead = 0) then
+          exit(false);
+        ValueSingle := Swap32(ValueSingle);
+        Msg := Format('%f', [ValueSingle]);
       end;
     7:
        begin // Bool
@@ -372,10 +411,11 @@ begin
 
           AllRoutes.DbHandles := Swap32(AllRoutes.DbHandles);
           AllRoutes.DbHandlesSize := Swap32(AllRoutes.DbHandlesSize);
+          AllRoutes.HandleId := Swap32(AllRoutes.HandleId);
 
           RouteInfo.AddPair('mUdbHandles',
-                            Format('Count: %d Unknown1: 0x%.8x, Size: %d, Unknown2: 0x%.8x Unknown3: 0x%.2x',
-                            [AllRoutes.DbHandles, AllRoutes.Unknown1, AllRoutes.DbHandlesSize, AllRoutes.Unknown2, AllRoutes.Unknown3]),
+                            Format('Count: %d Unknown1: 0x%.8x, Size: %d, DataType: %d, HandleId: %d',
+                            [AllRoutes.DbHandles, AllRoutes.Unknown1, AllRoutes.DbHandlesSize, AllRoutes.DataType, AllRoutes.HandleId]),
                             TObject(SaveFilePos));
 
           LocFilePos := FilePos(F);

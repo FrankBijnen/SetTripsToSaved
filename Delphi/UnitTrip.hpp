@@ -96,8 +96,8 @@ public:
 	int DbHandles;
 	unsigned Unknown1;
 	unsigned DbHandlesSize;
-	unsigned Unknown2;
-	System::Byte Unknown3;
+	System::Byte DataType;
+	int HandleId;
 	System::Byte Terminator;
 };
 #pragma pack(pop)
@@ -111,9 +111,11 @@ public:
 	System::StaticArray<char, 12> KeyName;
 	unsigned ValueLen;
 	System::Byte DataType;
-	System::StaticArray<System::Byte, 158> Unknown1;
+	unsigned UdbHandleSize;
+	unsigned Unknown2;
+	System::StaticArray<System::Byte, 150> Unknown3;
 	System::Word DbHandles;
-	System::StaticArray<System::Byte, 1288> Unknown2;
+	System::StaticArray<System::Byte, 1288> Unknown4;
 };
 #pragma pack(pop)
 

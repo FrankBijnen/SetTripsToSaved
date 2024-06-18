@@ -41,6 +41,7 @@ type
     HexPanel: TPanel;
     Splitter2: TSplitter;
     PnlTripName: TPanel;
+    BtnSaveTripFile: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure BtnRefreshClick(Sender: TObject);
@@ -57,6 +58,8 @@ type
     procedure FormShow(Sender: TObject);
     procedure SyncHexEdit(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure PageControl1Change(Sender: TObject);
+    procedure BtnSaveTripFileClick(Sender: TObject);
+    procedure ValueListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     { Private declarations }
     PrefDevice: string;
@@ -94,7 +97,7 @@ var
 
 implementation
 
-uses UnitStringUtils;
+uses UnitStringUtils, Clipbrd;
 
 const RegKey = 'Software\TDBware\SetTripsToSaved';
 
@@ -136,6 +139,15 @@ begin
   end;
 end;
 
+procedure TFrmSetTripsToSaved.BtnSaveTripFileClick(Sender: TObject);
+begin
+  if (OpenDialog1.FileName = '') then
+    exit;
+  HexEdit.SaveToFile(OpenDialog1.FileName);
+  UnitTrip.ProcessTripFile(OpenDialog1.FileName, VleTripinfo.Strings, VlemLocations.Strings, VlemAllRoutes.Strings, TProcessOption.CheckOnly);
+  LoadHex(OpenDialog1.FileName);
+end;
+
 procedure TFrmSetTripsToSaved.BtnOpenTripFileClick(Sender: TObject);
 begin
   if OpenDialog1.Execute then
@@ -143,6 +155,7 @@ begin
     HexEdit.LoadFromFile(OpenDialog1.FileName);
     UnitTrip.ProcessTripFile(OpenDialog1.FileName, VleTripinfo.Strings, VlemLocations.Strings, VlemAllRoutes.Strings, TProcessOption.CheckOnly);
     LoadHex(OpenDialog1.FileName);
+    BtnSaveTripFile.Enabled := true;
   end;
 end;
 
@@ -151,7 +164,7 @@ begin
   HexEdit := TBCHexEditor.Create(Self);
   HexEdit.Parent := HexPanel;
   HexEdit.Align := alClient;
-  HexEdit.ReadOnlyView := true;
+  //HexEdit.ReadOnlyView := true;
 
   InitSortSpec(LstFiles.Columns[0], true, FSortSpecification);
   ReadSettings;
@@ -297,6 +310,14 @@ begin
   end;
 end;
 
+procedure TFrmSetTripsToSaved.ValueListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (Key = Ord('C')) and
+     (ssCtrl in Shift) then
+    with TValueListEditor(Sender) do
+      Clipboard.AsText :=  Cells[Col, Row];
+end;
+
 procedure TFrmSetTripsToSaved.ListFiles(const UseParent: boolean);
 var ABASE_Data: TBASE_Data;
     SParent: Widestring;
@@ -398,6 +419,7 @@ begin
   HexEdit.LoadFromFile(FileName);
   PnlTripName.Caption := ExtractFileName(FileName) + ' / ' + VleTripInfo.Values['mTripName'];
   SyncHexEditFromPage;
+  BtnSaveTripFile.Enabled := false;
 end;
 
 procedure TFrmSetTripsToSaved.PageControl1Change(Sender: TObject);

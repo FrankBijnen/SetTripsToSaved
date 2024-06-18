@@ -112,6 +112,16 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
       TabOrder = 5
       OnClick = BtnOpenTripFileClick
     end
+    object BtnSaveTripFile: TButton
+      Left = 804
+      Top = 25
+      Width = 75
+      Height = 25
+      Caption = 'Save Trip File'
+      Enabled = False
+      TabOrder = 6
+      OnClick = BtnSaveTripFileClick
+    end
   end
   object PnlParent: TPanel
     AlignWithMargins = True
@@ -194,6 +204,7 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
         Align = alClient
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goAlwaysShowEditor, goThumbTracking]
         TabOrder = 0
+        OnKeyDown = ValueListKeyDown
         OnSelectCell = SyncHexEdit
         ColWidths = (
           150
@@ -211,8 +222,8 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
         Align = alClient
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goAlwaysShowEditor, goThumbTracking]
         TabOrder = 0
+        OnKeyDown = ValueListKeyDown
         OnSelectCell = SyncHexEdit
-        ExplicitHeight = 452
         ColWidths = (
           150
           467)
@@ -229,6 +240,7 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
         Align = alClient
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goAlwaysShowEditor, goThumbTracking]
         TabOrder = 0
+        OnKeyDown = ValueListKeyDown
         OnSelectCell = SyncHexEdit
         ColWidths = (
           150
@@ -252,9 +264,7 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
       Height = 41
       Align = alTop
       TabOrder = 0
-      ExplicitLeft = 100
-      ExplicitTop = 50
-      ExplicitWidth = 185
+      ExplicitWidth = 655
     end
   end
   object ImageList: TImageList
@@ -401,7 +411,7 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
       000000000000}
   end
   object OpenDialog1: TOpenDialog
-    Left = 905
-    Top = 33
+    Left = 976
+    Top = 25
   end
 end
