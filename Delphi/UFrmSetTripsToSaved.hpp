@@ -75,7 +75,7 @@ __published:
 	Vcl::Extctrls::TPanel* HexPanel;
 	Vcl::Extctrls::TSplitter* Splitter2;
 	Vcl::Extctrls::TPanel* PnlTripName;
-	Vcl::Stdctrls::TButton* Button1;
+	Vcl::Stdctrls::TButton* BtnSaveTripFile;
 	void __fastcall FormCreate(System::TObject* Sender);
 	void __fastcall FormDestroy(System::TObject* Sender);
 	void __fastcall BtnRefreshClick(System::TObject* Sender);
@@ -92,7 +92,7 @@ __published:
 	void __fastcall FormShow(System::TObject* Sender);
 	void __fastcall SyncHexEdit(System::TObject* Sender, int ACol, int ARow, bool &CanSelect);
 	void __fastcall PageControl1Change(System::TObject* Sender);
-	void __fastcall Button1Click(System::TObject* Sender);
+	void __fastcall BtnSaveTripFileClick(System::TObject* Sender);
 	void __fastcall ValueListKeyDown(System::TObject* Sender, System::Word &Key, System::Classes::TShiftState Shift);
 	
 private:

@@ -6,13 +6,13 @@ import javax.swing.JFileChooser;
 
 public class SetTripsToSaved {
 
-	private static String ProgramName = "SetTripsToSaved Version 1.0";
+	private static String ProgramName = "SetTripsToSaved Version 1.1";
 	private static String Warning = 
 			"This program will modify the bit that defines if a trip is Saved or Imported. \n" +
-	        "That will change the routing behaviour of the trip. It is only meant to be used for the Garmin Zumo XT.\n" +
-			".trip files ae located in 'Internal Storage\\.System\\Trips' on the XT,\n" + 
+	        "That will change the routing behaviour of the trip. It is only meant to be used for the Garmin Zumo XT(2).\n" +
+			".trip files are located in 'Internal Storage\\.System\\Trips' on the XT(2),\n" + 
 	        "and should be copied first to your hard-drive for use with this program.\n" +
-	        "After updating the trip files they should be copied back to the Garmin Zumo XT.\n\n" +
+	        "After updating the trip files they should be copied back to the Garmin Zumo XT(2).\n\n" +
 			"Use this program entirely at your own risk!";
 	private static String TripExtension = ".trip";
 	private static String ImportedKeyWord = "mImported";
