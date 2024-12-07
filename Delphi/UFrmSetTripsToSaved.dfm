@@ -3,8 +3,8 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
   Top = 0
   AlphaBlend = True
   Caption = 'Set trips to saved'
-  ClientHeight = 653
-  ClientWidth = 1297
+  ClientHeight = 652
+  ClientWidth = 1293
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,7 +18,7 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
   object Splitter1: TSplitter
     Left = 0
     Top = 142
-    Width = 1297
+    Width = 1293
     Height = 3
     Cursor = crVSplit
     Align = alTop
@@ -30,7 +30,7 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
     Left = 631
     Top = 172
     Width = 5
-    Height = 481
+    Height = 480
     ExplicitLeft = 1
     ExplicitTop = 1
     ExplicitHeight = 464
@@ -38,22 +38,22 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
   object LBDevices: TListBox
     Left = 0
     Top = 60
-    Width = 1297
+    Width = 1293
     Height = 82
     Align = alTop
     ItemHeight = 13
     TabOrder = 0
     OnDblClick = LBDevicesDblClick
-    ExplicitWidth = 1293
+    ExplicitWidth = 1289
   end
   object PnlTop: TPanel
     Left = 0
     Top = 0
-    Width = 1297
+    Width = 1293
     Height = 60
     Align = alTop
     TabOrder = 1
-    ExplicitWidth = 1293
+    ExplicitWidth = 1289
     object BtnRefresh: TButton
       Left = 10
       Top = 25
@@ -66,13 +66,13 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
     object EdTempPath: TEdit
       Left = 1
       Top = 1
-      Width = 1295
+      Width = 1291
       Height = 21
       Align = alTop
       ReadOnly = True
       TabOrder = 1
       Text = 'EdTempPath'
-      ExplicitWidth = 1291
+      ExplicitWidth = 1287
     end
     object BtnSetImported: TButton
       Tag = 2
@@ -127,25 +127,25 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
     AlignWithMargins = True
     Left = 8
     Top = 148
-    Width = 1281
+    Width = 1277
     Height = 21
     Margins.Left = 8
     Margins.Right = 8
     Align = alTop
     Alignment = taLeftJustify
     TabOrder = 2
-    ExplicitWidth = 1277
+    ExplicitWidth = 1273
   end
   object PageControl1: TPageControl
     Left = 0
     Top = 172
     Width = 631
-    Height = 481
-    ActivePage = TabSheetFiles
+    Height = 480
+    ActivePage = TabSheetLocations
     Align = alLeft
     TabOrder = 3
     OnChange = PageControl1Change
-    ExplicitHeight = 480
+    ExplicitHeight = 479
     object TabSheetFiles: TTabSheet
       Caption = 'FileList'
       ImageIndex = 3
@@ -202,7 +202,6 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
         Width = 623
         Height = 453
         Align = alClient
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goAlwaysShowEditor, goThumbTracking]
         TabOrder = 0
         OnKeyDown = ValueListKeyDown
         OnSelectCell = SyncHexEdit
@@ -218,12 +217,12 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
         Left = 0
         Top = 0
         Width = 623
-        Height = 453
+        Height = 452
         Align = alClient
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goAlwaysShowEditor, goThumbTracking]
         TabOrder = 0
         OnKeyDown = ValueListKeyDown
         OnSelectCell = SyncHexEdit
+        ExplicitHeight = 451
         ColWidths = (
           150
           467)
@@ -251,20 +250,20 @@ object FrmSetTripsToSaved: TFrmSetTripsToSaved
   object HexPanel: TPanel
     Left = 636
     Top = 172
-    Width = 661
-    Height = 481
+    Width = 657
+    Height = 480
     Align = alClient
     TabOrder = 4
-    ExplicitWidth = 657
-    ExplicitHeight = 480
+    ExplicitWidth = 653
+    ExplicitHeight = 479
     object PnlTripName: TPanel
       Left = 1
       Top = 1
-      Width = 659
+      Width = 655
       Height = 41
       Align = alTop
       TabOrder = 0
-      ExplicitWidth = 655
+      ExplicitWidth = 651
     end
   end
   object ImageList: TImageList

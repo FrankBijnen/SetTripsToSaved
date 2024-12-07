@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Winapi.ActiveX, System.Win.ComObj, Vcl.ComCtrls,
-  PortableDeviceApiLib_TLB;
+  PortableDeviceApiLib_TLB, UnitMtpDevice;
 
 // based upon:
 // http://cgeers.com/2011/05/22/enumerating-windows-portable-devices/
@@ -334,14 +334,12 @@ const
 
   WPD_DEVICE_OBJECT_ID = 'DEVICE';
 
-type
-  IMTPDevice = IPortableDevice;
-
-function ReadFilesFromDevice(SDev: WideString;
+function GetFirstStorageID(PortableDev: IMTPDevice): WideString;
+function ReadFilesFromDevice(PortableDev: IMTPDevice;
                              Lst: TListItems;
                              SParent: WideString;
                              var CompletePath: WideString): PWideChar;
-function GetIdForPath(SDev: WideString;
+function GetIdForPath(PortableDev: IMTPDevice;
                       SPath: WideString;
                       var FriendlyPath: string): string;
 function GetIdForFile(PortableDev: IMTPDevice;
@@ -350,7 +348,7 @@ function GetIdForFile(PortableDev: IMTPDevice;
                       AListItem: TListItem = nil): string;
 function GetFileFromDevice(PortableDev: IMTPDevice; SFile, SSaveTo, NFile: WideString): Boolean;
 function DelFileFromDevice(PortableDev: IMTPDevice; SFile: WideString): Boolean;
-function RenameObject(Device: IPortableDevice; ObjectId, NewName: PWideChar): Boolean;
+function RenameObject(Device: IMTPDevice; ObjectId, NewName: WideString): Boolean;
 function TransferNewFileToDevice(PortableDev: IMTPDevice; SFile, SSaveTo: WideString;
                                  NewName: WideString = ''): WideString;
 function TransferExistingFileToDevice(PortableDev: IMTPDevice; SFile, SSaveTo: WideString; AListItem: TListItem): Boolean;
@@ -359,7 +357,8 @@ function ConnectToDevice(SDev: WideString; var PortableDev: IMTPDevice; Readonly
 
 implementation
 
-uses System.Math, System.DateUtils, UnitMtpDevice, UnitStringUtils;
+uses
+  System.Math, System.DateUtils, UnitStringUtils;
 
 // For documentation purposes only
 function DisplayFunctionalCategory(Cat_Id: WideString): String;
@@ -461,7 +460,7 @@ end;
 //        For the Zumo XT it is enough to just modify original name. For other device we may need object_name also.
 const BoolFalse = 0;
 
-function RenameObject(Device: IPortableDevice; ObjectId, NewName: PWideChar): boolean;
+function RenameObject(Device: IMTPDevice; ObjectId, NewName: WideString): boolean;
 var Content: IPortableDeviceContent;
     Properties: IPortableDeviceProperties;
     Attributes: IPortableDeviceValues;
@@ -487,7 +486,7 @@ begin
 // Can we write Original name?
   ObjectOriginalNameKey.fmtid := WPD_OBJECT_ORIGINAL_FILE_NAME_FMTID;
   ObjectOriginalNameKey.pid := WPD_OBJECT_ORIGINAL_FILE_NAME_PID;
-  Hr := Properties.GetPropertyAttributes(ObjectId, ObjectOriginalNameKey, Attributes);
+  Hr := Properties.GetPropertyAttributes(PwideChar(ObjectId), ObjectOriginalNameKey, Attributes);
   if (Hr <> S_OK) then
     exit;
 
@@ -500,12 +499,12 @@ begin
 
 // Yes, can modify original name.
   ObjectPropertiesToWrite := CreateComObject(CLASS_PortableDeviceValues) as IPortableDeviceValues;
-  Hr := ObjectPropertiesToWrite.SetStringValue(ObjectOriginalNameKey, NewName);
+  Hr := ObjectPropertiesToWrite.SetStringValue(ObjectOriginalNameKey, PWideChar(NewName));
   if (HR <> S_OK) then
     exit;
 
 // Change Original name.
-  Hr := Properties.SetValues(ObjectId,
+  Hr := Properties.SetValues(PWideChar(ObjectId),
                              ObjectPropertiesToWrite,
                              Results);
   result := (Hr = S_OK);
@@ -634,7 +633,7 @@ var PortableDeviceValues: IPortableDeviceValues;
     Dev_Val: PortableDeviceApiLib_TLB._tagpropertykey;
 begin
   Result := False;
-  PortableDev := CoPortableDevice.Create;
+  PortableDev := CoPortableDeviceFTM.Create;
 
    //create device values:
   PortableDeviceValues := CreateComObject(CLASS_PortableDeviceValues) as IPortableDeviceValues;
@@ -801,7 +800,6 @@ var
   I: Integer;
   DevFriendlyName: WideString;
   DevDescription: WideString;
-  PortableDev: IPortableDevice;
   AMTP_Device:TMTP_Device;
 begin
   result := Tlist.Create;
@@ -845,18 +843,11 @@ begin
       AMTP_Device.FriendlyName := Trim(DevFriendlyName);
       AMTP_Device.Device := GetDevId(Trim(PDevs[I]));
       result.Add(AMTP_Device);
-
-      //list of cap.
-      if ConnectToDevice(PDevs[I], PortableDev) then
-      begin
-        EnumDevCapabilities(PortableDev);  // Is this really needed?
-        PortableDev.Close;
-      end;
     end;
   end;
 end;
 
-function GetFirstStorageID(PortableDev: IPortableDevice): WideString;
+function GetFirstStorageID(PortableDev: IMTPDevice): WideString;
 var Content: IPortableDeviceContent;
     ObjectIds: IEnumPortableDeviceObjectIDs;
     ObjectId: PWideChar;
@@ -865,6 +856,7 @@ begin
   Result := WPD_DEVICE_OBJECT_ID;
   if PortableDev.Content(Content) = S_OK then
   begin
+    Result := '';
     if Content.EnumObjects(0, '', nil, ObjectIds) = S_OK then
     begin
       ObjectIds.Reset;
@@ -1044,33 +1036,25 @@ begin
     result := GetParents(AContent, ParentName, result);
 end;
 
-function ReadFilesFromDevice(SDev: WideString;
+function ReadFilesFromDevice(PortableDev: IMTPDevice;
                              Lst: TListItems;
                              SParent: WideString;
                              var CompletePath: WideString):PWideChar;
-var PortableDev: IPortableDevice;
-    Content: IPortableDeviceContent;
+var Content: IPortableDeviceContent;
     CrNormal, CrWait: HCURSOR;
 begin
   Result := '';
   CrWait := LoadCursor(0,IDC_WAIT);
   CrNormal := SetCursor(CrWait);
+  //read content of device
   try
-    if ConnectToDevice(SDev, PortableDev) then
+    if PortableDev.Content(Content) = S_OK then
     begin
-      //read content of device
-      try
-        if PortableDev.Content(Content) = S_OK then
-        begin
-          if (SParent = '') then
-            SParent := GetFirstStorageID(PortableDev);
+      if (SParent = '') then
+        SParent := GetFirstStorageID(PortableDev);
 
-          CompletePath := GetParents(Content, SParent, '');
-          Result := EnumContentsOfFolder(Content, SParent, Lst);
-        end;
-      finally
-        PortableDev.Close;
-      end;
+      CompletePath := GetParents(Content, SParent, '');
+      Result := EnumContentsOfFolder(Content, SParent, Lst);
     end;
   finally
     PortableDev := nil;
@@ -1163,11 +1147,10 @@ begin
   end;
 end;
 
-function GetIdForPath(SDev: WideString;
+function GetIdForPath(PortableDev: IMTPDevice;
                       SPath: WideString;
                       var FriendlyPath: string): string;
-var PortableDev: IPortableDevice;
-    Content: IPortableDeviceContent;
+var Content: IPortableDeviceContent;
     CrNormal, CrWait: HCURSOR;
     SFolder: string;
 
@@ -1190,21 +1173,13 @@ begin
   CompletePath := SPath;
   FriendlyPath := '';
   try
-    if ConnectToDevice(SDev, PortableDev) then
+    //read content of device
+    if PortableDev.Content(Content) = S_OK then
     begin
-      //read content of device
-      try
-        if PortableDev.Content(Content) = S_OK then
-        begin
-          CurPath := NextField(CompletePath, '\');
-          TraversePath(CurPath, GetFirstStorageID(PortableDev), CompletePath, SFolder, FriendlyPath, result);
-        end;
-      finally
-        PortableDev.Close;
-      end;
+      CurPath := NextField(CompletePath, '\');
+      TraversePath(CurPath, GetFirstStorageID(PortableDev), CompletePath, SFolder, FriendlyPath, result);
     end;
   finally
-    PortableDev := nil;
     SetCursor(CrNormal);
   end;
 end;
@@ -1323,7 +1298,6 @@ end;
 
 // See for more info
 //https://learn.microsoft.com/en-us/windows/win32/wpd_sdk/transferring-an-image-or-music-file-to-the-device
-
 function TransferNewFileToDevice(PortableDev: IMTPDevice; SFile, SSaveTo: WideString;
                                  NewName: WideString = ''): WideString;
 var Content: IPortableDeviceContent;
@@ -1434,7 +1408,7 @@ begin
     exit;
 
 // Rename back to original file
-  if not RenameObject(PortableDev, PWideChar(NewObjectId), PWideChar(OriginalName)) then
+  if not RenameObject(PortableDev, NewObjectId, OriginalName) then
     exit;
 
 // And get properties

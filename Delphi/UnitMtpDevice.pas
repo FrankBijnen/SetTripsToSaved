@@ -4,9 +4,10 @@ unit UnitMtpDevice;
 interface
 
 uses
-  System.Classes, Vcl.ComCtrls;
+  System.Classes, Vcl.ComCtrls, PortableDeviceApiLib_TLB;
 
 type
+  IMTPDevice = IPortableDevice;
 
   TBASE_Data = class(TObject)
     IsFolder: boolean;
@@ -32,6 +33,7 @@ type
     Device: string;
     Description: string;
     FriendlyName: string;
+    PortableDev: IMTPDevice;
   end;
 
 implementation

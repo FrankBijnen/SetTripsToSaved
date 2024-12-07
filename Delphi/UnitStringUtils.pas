@@ -2,27 +2,53 @@ unit UnitStringUtils;
 
 interface
 
-uses Winapi.Windows, System.Sysutils, System.Variants, Winapi.ShellAPI, System.Win.Registry;
+uses
+  System.Sysutils, System.Variants, Winapi.ShellAPI, System.Win.Registry,
+  Winapi.Windows;
 
 function SenSize(const S: int64): string;
+function Intd(const N: Integer; const D: Integer): string;
 function Spc(const Cnt: integer): string;
 function NextField(var AString: string; const ADelimiter: string): string;
+function ReplaceAll(const AString: string;
+                    const OldPatterns, NewPatterns: array of string;
+                    Flags: TReplaceFlags = [rfReplaceAll]): string;
+function CoordAsDec(const ACoord: string): double;
+function ValidLatLon(const Lat, Lon: string): boolean;
+procedure ParseLatLon(const LatLon: string; var Lat, Lon: string);
+procedure AdjustLatLon(var Lat, Lon: string; No_Decimals: integer);
+
 procedure DebugMsg(const Msg: array of variant);
-function GetRegistryValue(const ARootKey: HKEY; const KeyName, Name: string): string;
+function GetRegistryValue(const ARootKey: HKEY; const KeyName, Name: string; const Default: string = ''): string;
 procedure SetRegistryValue(const ARootKey: HKEY; const KeyName, Name, Value: string);
-function TempPath: string;
 function TempFilename(const Prefix: string): string;
+function HtmlEscape(const HTML: string): string;
+function EscapeFileName(InFile: string): string;
 function CreateTempPath(const Prefix: string): string;
-function RemovePath(const ADir: string; const AFlags: FILEOP_FLAGS = FOF_NO_UI): boolean;
+function GetHtmlTmp: string;
+function GetTracksTmp: string;
+function GetOSMTemp: string;
+function GetRoutesTmp: string;
+
+var
+  CreatedTempPath: string;
 
 implementation
 
-uses Vcl.Forms;
+uses
+  System.Math, System.StrUtils, Vcl.Forms, Vcl.Dialogs;
+
+var
+  FloatFormatSettings: TFormatSettings; // for FormatFloat -see Initialization
 
 const LenFileSize = 11;
       B  = ' B';
       Kb = ' Kb';
       Mb = ' Mb';
+      HtmlTempFileName = 'TripManager.html';
+      TrackFileNames = 'TripManager*.track';
+      OSMDir = 'OSM\';
+      RoutesDir = 'Routes\';
 
 function SenSize(const S: int64): string;
 var H: string;
@@ -37,6 +63,17 @@ begin
     result := H + FormatFloat('#,##0', S / (1024 * 1024)) + Mb;
   I := length(result);
   result := copy(result, I - LenFileSize + 1, LenFileSize);
+end;
+
+function Intd(const N: Integer; const D: Integer): string;
+var L: integer;
+begin
+  result := IntToStr(N);
+  L := D - Length(result);
+  if L >= 0 then
+    result := StringOfChar(char('0'), L) + result
+  else
+    result := StringOfChar(char('*'), D);
 end;
 
 function Spc(const Cnt: integer): string;
@@ -60,6 +97,62 @@ begin
   end;
 end;
 
+function ReplaceAll(const AString: string;
+                    const OldPatterns, NewPatterns: array of string;
+                    Flags: TReplaceFlags = [rfReplaceAll]): string;
+var
+  PatternHigh: integer;
+  Index: integer;
+begin
+  PatternHigh := Min(High(NewPatterns), High(OldPatterns));
+  if (PatternHigh < 0) then
+    exit(AString);
+
+  result := StringReplace(AString, OldPatterns[0], NewPatterns[0], Flags);
+  for Index := 1 to PatternHigh do
+    result := StringReplace(result, OldPatterns[Index], NewPatterns[Index], Flags);
+end;
+
+function CoordAsDec(const ACoord: string): double;
+begin
+  if not TryStrToFloat(ACoord, result, FloatFormatSettings) then
+    result := 0;
+end;
+
+function ValidLatLon(const Lat, Lon: string): boolean;
+var
+  ADouble: Double;
+begin
+  result := TryStrToFloat(Lat, ADouble, FloatFormatSettings);
+  result := result and (Abs(ADouble) <= 90);
+  result := result and TryStrToFloat(Lon, ADouble, FloatFormatSettings);
+  result := result and (Abs(ADouble) <= 180);
+end;
+
+function AdjustUsingRound(const ADecimal: string; No_Decimals: integer): string;
+var
+  F: double;
+begin
+  if TryStrToFloat(ADecimal, F, FloatFormatSettings) then
+  begin
+    F := RoundTo(F, -No_Decimals);
+    result := FloatToStr(F, FloatFormatSettings);
+  end;
+end;
+
+procedure AdjustLatLon(var Lat, Lon: string; No_Decimals: integer);
+begin
+  Lat := AdjustUsingRound(Lat, No_Decimals);
+  Lon := AdjustUsingRound(Lon, No_Decimals);
+end;
+
+procedure ParseLatLon(const LatLon: string; var Lat, Lon: string);
+begin
+  Lon := LatLon;
+  Lat := Trim(NextField(Lon, ','));
+  Lon := Trim(Lon);
+end;
+
 procedure DebugMsg(const Msg: array of variant);
 var I: integer;
     FMsg: string;
@@ -70,18 +163,20 @@ begin
   OutputDebugString(PChar(FMsg));
 end;
 
-function GetRegistryValue(const ARootKey: HKEY; const KeyName, Name: string): string;
+function GetRegistryValue(const ARootKey: HKEY; const KeyName, Name: string; const Default: string=''): string;
 var Registry: TRegistry;
 begin
   Registry := TRegistry.Create(KEY_READ);
   try
     Registry.RootKey := ARootKey;
     // False because we do not want to create it if it doesn't exist
-    Registry.OpenKey(KeyName, False);
-    Result := Registry.ReadString(Name);
+    if (Registry.OpenKey(KeyName, False)) then
+      result := Registry.ReadString(Name);
   finally
     Registry.Free;
   end;
+  if (result = '') then
+    result := Default;
 end;
 
 procedure SetRegistryValue(const ARootKey: HKEY; const KeyName, Name, Value: string);
@@ -116,30 +211,97 @@ function CreateTempPath(const Prefix: string): string;
 begin
   result := TempFilename(Prefix);
   if FileExists(result) then
-    DeleteFile(result);
+    System.Sysutils.DeleteFile(result);
   MkDir(result);
+  CreatedTempPath := IncludeTrailingPathDelimiter(result);
+  MkDir(GetOSMTemp);
+  MKDir(GetRoutesTmp);
 end;
 
-function RemovePath(const ADir: string; const AFlags: FILEOP_FLAGS = FOF_NO_UI): boolean;
-var ShOp: TSHFileOpStruct;
-    ShResult: Integer;
+function GetOSMTemp: string;
+begin
+  result := CreatedTempPath + OSMDir;
+end;
+
+function GetHtmlTmp: string;
+begin
+  result := GetOSMTemp + HtmlTempFileName;
+end;
+
+function GetTracksTmp: string;
+begin
+  result := GetOSMTemp + TrackFileNames;
+end;
+
+function GetRoutesTmp: string;
+begin
+  result := CreatedTempPath + RoutesDir;
+end;
+
+function HtmlEscape(const HTML: string): string;
+begin
+  result := ReplaceAll(HTML,
+                       ['&',     '<',    '>',    '"',      '''',    ' ',      '-'],
+                       ['&amp;', '&lt;', '&gt;', '&quot;', '&#39;', '&nbsp;', '&#8209;']
+                      );
+end;
+
+function EscapeFileName(InFile: string): string;
+const InvalidChars = ['<', '>', ':', '"', '/', '\', '|', '?', '*'];
+var Indx: integer;
+begin
+  result := InFile;
+
+  for Indx := 1 to Length(result) do
+  begin
+    if (CharInSet(result[Indx], InvalidChars)) then
+      result[Indx] := '_';
+  end;
+end;
+
+function RemovePath(const ADir: string; const AFlags: FILEOP_FLAGS = FOF_NO_UI; Retries: integer = 3): boolean;
+var
+  ShOp: TSHFileOpStruct;
+  ShResult: integer;
+  CurrentTry: integer;
 begin
   result := false;
   if not(DirectoryExists(ADir)) then
     exit;
 
-  ShOp.Wnd := Application.Handle;
-  ShOp.wFunc := FO_DELETE;
-  ShOp.pFrom := PChar(ADir + #0);
-  ShOp.pTo := nil;
-  ShOp.fFlags := AFlags;
+  CurrentTry := Retries;
+  repeat
+    FillChar(ShOp, SizeOf(ShOp), 0);
+    ShOp.Wnd := Application.Handle;
+    ShOp.wFunc := FO_DELETE;
+    ShOp.pFrom := PChar(ADir + #0);
+    ShOp.pTo := nil;
+    ShOp.fFlags := AFlags;
+    ShResult := SHFileOperation(ShOp);
+    if (ShResult = 0) then
+      break;
 
-  ShResult := SHFileOperation(ShOp);
-  if (ShResult <> 0) and
-     (ShOp.fAnyOperationsAborted = false) then
-    raise Exception.Create(Format('Remove directory failed code %u', [ShResult]));
+    Dec(CurrentTry);
+    Sleep(100);
+    Application.ProcessMessages;
+  until (CurrentTry < 1);
+
+  if (ShResult <> 0) and (ShOp.fAnyOperationsAborted = false) then
+    ShowMessage(Format('Remove directory failed code %u', [ShResult]));
   result := (ShResult = 0);
 end;
 
+initialization
+
+begin
+  FloatFormatSettings.ThousandSeparator := ',';
+  FloatFormatSettings.DecimalSeparator := '.';
+end;
+
+finalization
+
+begin
+  RemovePath(CreatedTempPath);
+end;
 
 end.

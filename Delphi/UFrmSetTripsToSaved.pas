@@ -1,5 +1,4 @@
 ﻿unit UFrmSetTripsToSaved;
-{$DEFINE USE_TRANSFEREXISTING}
 
 interface
 
@@ -60,6 +59,7 @@ type
     procedure PageControl1Change(Sender: TObject);
     procedure BtnSaveTripFileClick(Sender: TObject);
     procedure ValueListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+
   private
     { Private declarations }
     PrefDevice: string;
@@ -87,7 +87,6 @@ type
     procedure ListFiles(const UseParent: boolean);
     function ProcessFile(const Indx: integer; ProcessOption: TProcessOption): boolean;
     procedure ReadSettings;
-
   public
     { Public declarations }
   end;
@@ -97,7 +96,8 @@ var
 
 implementation
 
-uses UnitStringUtils, Clipbrd;
+uses
+  UnitStringUtils, Clipbrd;
 
 const RegKey = 'Software\TDBware\SetTripsToSaved';
 
@@ -168,14 +168,13 @@ begin
 
   InitSortSpec(LstFiles.Columns[0], true, FSortSpecification);
   ReadSettings;
-  EdTempPath.Text := CreateTempPath('TRIP');
+  EdTempPath.Text := CreatedTempPath;
   GetDeviceList;
 end;
 
 procedure TFrmSetTripsToSaved.FormDestroy(Sender: TObject);
 begin
   FreeDevices;
-  RemovePath(EdTempPath.Text);
 end;
 
 procedure TFrmSetTripsToSaved.FormShow(Sender: TObject);
@@ -241,6 +240,8 @@ begin
     exit;
 
   CurrentDevice := DeviceList[Indx];
+  CurrentDevice.PortableDev := nil;
+  ConnectToDevice(CurrentDevice.Device, CurrentDevice.PortableDev, false);
 end;
 
 procedure TFrmSetTripsToSaved.LBDevicesDblClick(Sender: TObject);
@@ -265,7 +266,7 @@ end;
 procedure TFrmSetTripsToSaved.SetCurrentPath(const APath: string);
 var FriendlyPath: string;
 begin
-  FSavedParent := GetIdForPath(CurrentDevice.Device, APath, FriendlyPath);
+  FSavedParent := GetIdForPath(CurrentDevice.PortableDev, APath, FriendlyPath);
 end;
 
 procedure TFrmSetTripsToSaved.SyncHexEdit(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
@@ -341,7 +342,7 @@ begin
   // LstFile.Items should contain a least a Caption (Filename) and 4 subitems Date, Time, Ext and Size.
   // ReadFilesFromDevice will populate the data.
   // Defined in the Listview on the form.
-  FSavedParent := ReadFilesFromDevice(CurrentDevice.Device, LstFiles.Items, SParent, FCurrentPath);
+  FSavedParent := ReadFilesFromDevice(CurrentDevice.PortableDev, LstFiles.Items, SParent, FCurrentPath);
   PnlParent.Caption := FCurrentPath;
 
   DoListViewSort(LstFiles, LstFiles.Columns[0], true, FSortSpecification);
@@ -432,7 +433,6 @@ var NFile: widestring;
     ABASE_Data_File: TBASE_Data;
     LocalFile: string;
     ImportedValue: string;
-    PortableDev: IMTPDevice;
 begin
   result := false;
   if (Indx >= 0) then
@@ -446,57 +446,37 @@ begin
     NFile := LstFiles.Items.Item[Indx].Caption;
     LocalFile := IncludeTrailingPathDelimiter(EdTempPath.Text) + NFile;
 
-    if not ConnectToDevice(CurrentDevice.Device, PortableDev, (ProcessOption = TProcessOption.CheckOnly)) then
-      raise exception.Create(Format('Device %s could not be opened.', [CurrentDevice.FriendlyName]));
-    try
-      // Copy File to Local directory
-      result := GetFileFromDevice(PortableDev, ABASE_Data_File.ObjectId, EdTempPath.Text, NFile);
+    if not Assigned(CurrentDevice) or
+       not Assigned(CurrentDevice.PortableDev) then
+      raise exception.Create(Format('Device %s not opened.', [CurrentDevice.FriendlyName]));
+    // Copy File to Local directory
+    result := GetFileFromDevice(CurrentDevice.PortableDev, ABASE_Data_File.ObjectId, EdTempPath.Text, NFile);
+    if not result then
+      raise Exception.Create(Format('Copy %s from %s failed', [NFile, CurrentDevice.Device]));
+
+    result := ProcessTripFile(LocalFile, VleTripinfo.Strings, VlemLocations.Strings, VlemAllRoutes.Strings, ProcessOption);
+
+    ImportedValue := VleTripInfo.Strings.Values['mImported'];
+
+    if (ImportedValue <> '') then
+    begin
+      SetRegistryValue(HKEY_CURRENT_USER, RegKey, 'PrefDevice', CurrentDevice.FriendlyName);
+      SetRegistryValue(HKEY_CURRENT_USER, RegKey, 'PrefDeviceFolder', GetDevicePath(FCurrentPath));
+
+      LstFiles.Tag := LstFiles.Tag + 1; // Prevent an action to be executed
+      try
+        LstFiles.Items[Indx].Checked := (Pos('Value: False', ImportedValue) > 0);
+      finally
+        LstFiles.Tag := LstFiles.Tag - 1;
+      end;
+    end;
+
+    if (ProcessOption <> TProcessOption.CheckOnly) and
+       (result) then
+    begin
+      result := TransferExistingFileToDevice(CurrentDevice.PortableDev, LocalFile, FSavedFolderId, LstFiles.Items.Item[Indx]);
       if not result then
-        raise Exception.Create(Format('Copy %s from %s failed', [NFile, CurrentDevice.Device]));
-
-      result := ProcessTripFile(LocalFile, VleTripinfo.Strings, VlemLocations.Strings, VlemAllRoutes.Strings, ProcessOption);
-
-      ImportedValue := VleTripInfo.Strings.Values['mImported'];
-
-      if (ImportedValue <> '') then
-      begin
-        SetRegistryValue(HKEY_CURRENT_USER, RegKey, 'PrefDevice', CurrentDevice.FriendlyName);
-        SetRegistryValue(HKEY_CURRENT_USER, RegKey, 'PrefDeviceFolder', GetDevicePath(FCurrentPath));
-
-        LstFiles.Tag := LstFiles.Tag + 1; // Prevent an action to be executed
-        try
-          LstFiles.Items[Indx].Checked := (Pos('Value: False', ImportedValue) > 0);
-        finally
-          LstFiles.Tag := LstFiles.Tag - 1;
-        end;
-      end;
-
-      if (ProcessOption <> TProcessOption.CheckOnly) and
-         (result) then
-      begin
-{$IFDEF USE_TRANSFEREXISTING}
-        result := TransferExistingFileToDevice(PortableDev, LocalFile, FSavedFolderId, LstFiles.Items.Item[Indx]);
-        if not result then
-          raise Exception.Create(Format('Copy %s to %s failed', [NFile, CurrentDevice.Device]));
-{$ELSE}
-        // This is a risk.
-        // Suppose the delete succeeds, but the transfer fails?
-
-        result := DelFileFromDevice(PortableDev, ABASE_Data_File.ObjectId);
-        if not result then
-          raise Exception.Create(Format('Delete %s from %s failed', [NFile, CurrentDevice.Device]));
-
-        ABASE_Data_File.ObjectId := TransferNewFileToDevice(PortableDev, LocalFile, FSavedFolderId);
-        result := (ABASE_Data_File.ObjectId <> '');
-        if not result then
-          raise Exception.Create(Format('Copy %s to %s failed', [NFile, CurrentDevice.Device]));
-
-        // Get modified data.
-        GetIdForFile(PortableDev, FSavedFolderId, NFile, LstFiles.Items.Item[Indx]);
-{$ENDIF}
-      end;
-    finally
-      PortableDev.Close;
+        raise Exception.Create(Format('Copy %s to %s failed', [NFile, CurrentDevice.Device]));
     end;
   end;
 

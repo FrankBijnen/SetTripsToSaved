@@ -112,10 +112,9 @@ public:
 	unsigned ValueLen;
 	System::Byte DataType;
 	unsigned UdbHandleSize;
-	unsigned Unknown2;
-	System::StaticArray<System::Byte, 150> Unknown3;
+	unsigned Unknown1;
+	System::StaticArray<System::Byte, 150> Unknown2;
 	System::Word DbHandles;
-	System::StaticArray<System::Byte, 1288> Unknown4;
 };
 #pragma pack(pop)
 
@@ -147,6 +146,8 @@ public:
 
 
 //-- var, const, procedure ---------------------------------------------------
+static const System::Word XTHandleSize = System::Word(0x508);
+static const System::Word XT2HandleSize = System::Word(0x5a8);
 extern DELPHI_PACKAGE bool __fastcall ProcessTripFile(const System::UnicodeString TripFile, System::Classes::TStrings* TripInfo, System::Classes::TStrings* LocInfo, System::Classes::TStrings* RouteInfo, TProcessOption ProcessOption);
 }	/* namespace Unittrip */
 #if !defined(DELPHIHEADER_NO_IMPLICIT_NAMESPACE_USE) && !defined(NO_USING_NAMESPACE_UNITTRIP)

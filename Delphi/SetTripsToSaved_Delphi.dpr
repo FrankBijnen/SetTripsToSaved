@@ -3,18 +3,18 @@ program SetTripsToSaved_Delphi;
 uses
   Vcl.Forms,
   UFrmSetTripsToSaved in 'UFrmSetTripsToSaved.pas' {FrmSetTripsToSaved},
-  UnitTrip in 'UnitTrip.pas',
-  UnitStringUtils in 'UnitStringUtils.pas',
-  ListViewSort in 'ListViewSort.pas',
-  mtp_helper in 'mtp_helper.pas',
-  PortableDeviceApiLib_TLB in 'PortableDeviceApiLib_TLB.pas',
-  UnitMtpDevice in 'UnitMtpDevice.pas',
-  BCHexEditor in 'BCHexEditor.pas';
+  UnitStringutils,
+  UnitTrip in 'UnitTrip.pas';
 
 {$R *.res}
 
 begin
+{$IFDEF DEBUG}
+  ReportMemoryLeaksOnShutdown := true;
+{$ENDIF}
+
   Application.Initialize;
+  CreateTempPath('TRIP');
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TFrmSetTripsToSaved, FrmSetTripsToSaved);
   Application.Run;
